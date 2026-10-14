@@ -143,11 +143,44 @@ internal/selector/           # interactive Bubble Tea picker
 
 ## Development
 
+Run `make` or `make help` to list the available commands.
+
+Install [prek](https://github.com/j178/prek), then enable the hooks in each clone:
+
 ```bash
-make build
-make test
-make vet
+# macOS
+brew install prek
+# Alternatively, with uv: uv tool install prek
+make hooks-install
+make check
 ```
+
+Prek manages the pinned hook dependencies, including Gitleaks; a separate
+Gitleaks installation is not required. The first run downloads those tools.
+Go and Make must be on your `PATH`.
+
+| Command | Purpose |
+| --- | --- |
+| `make build` | Build `bin/aws-profile-manager` |
+| `make test` | Run unit and compiled-CLI integration tests |
+| `make test-race` | Run all tests with the race detector |
+| `make fmt` / `make fmt-check` | Format Go code / check formatting |
+| `make vet` | Run Go's static checks |
+| `make lint` | Run prek checks and scan the working tree for secrets |
+| `make lint-go` | Run golangci-lint v2.14, installed separately |
+| `make secrets` | Run only the working-tree Gitleaks scan |
+| `make hooks-install` | Install the pre-commit hook in this clone |
+| `make check` | Run basic lint, secret scanning, and race tests |
+| `make run` | Open the interactive picker |
+| `make install` / `make uninstall` | Install / remove the CLI |
+| `make clean` | Remove local `bin/` and `dist/` artifacts |
+
+The commit hook checks Go formatting, runs `go vet`, checks YAML and merge
+conflicts, fixes trailing whitespace and missing final newlines, and scans
+staged changes with Gitleaks. Review and re-stage files if a hook fixes them.
+`make lint` and CI additionally scan the working tree, so secret checking also
+runs when there are no staged changes. Hook versions are pinned in
+`.pre-commit-config.yaml`.
 
 Local Makefile builds use `git describe --tags --always --dirty`. Override the
 version for release testing when needed:
@@ -165,9 +198,8 @@ and otherwise report `dev`. Release builds embed their version at build time.
 Run the checks used by CI:
 
 ```bash
-go vet ./...
-go test -race ./...
-golangci-lint run
+make check
+make lint-go # requires golangci-lint v2.14 on PATH
 ```
 
 CI tests the minimum Go version and current stable Go, and runs golangci-lint
@@ -178,8 +210,8 @@ The automated tests need no AWS credentials. They compile the CLI and use a
 temporary AWS config and fake `aws` executable to exercise login policies,
 login failures, child exit codes, credential isolation, JSON output, shell
 quoting, and output-write errors. Picker tests cover navigation, filtering,
-selection, late filter results, cancellation, and table layout. The subprocess integration tests
-support macOS and Linux, matching the release targets.
+selection, late filter results, cancellation, and table layout. The subprocess
+integration tests support macOS and Linux, matching the release targets.
 
 For a live smoke test, choose a non-production profile and run:
 
@@ -198,8 +230,8 @@ Selecting a profile may check credentials and start SSO login.
 
 ## Contributing
 
-Issues and pull requests are welcome. Keep changes focused, format Go code with
-`gofmt`, and run `go vet ./...`, `go test -race ./...`, and `golangci-lint run`
+Issues and pull requests are welcome. Keep changes focused, enable the hooks
+with `make hooks-install`, and run `make fmt`, `make check`, and `make lint-go`
 before submitting a pull request.
 
 ## License

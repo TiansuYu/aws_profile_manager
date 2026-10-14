@@ -22,16 +22,16 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Check formatting
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            printf 'Unformatted Go files:\n%s\n' "$unformatted"
-            exit 1
-          fi
+        run: make fmt-check
       - name: Vet
-        run: go vet ./...
+        run: make vet
       - name: Test with race detector
-        run: go test -race ./...
+        run: make test-race
+      - name: Prek checks and secret scan
+        if: matrix.go == 'stable'
+        uses: j178/prek-action@v3.0.1
+        with:
+          extra-args: --all-files --hook-stage manual
       - name: Lint
         if: matrix.go == 'stable'
         uses: golangci/golangci-lint-action@v9
