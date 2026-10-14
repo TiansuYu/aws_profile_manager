@@ -1,0 +1,17 @@
+# Binaries
+/aws-profile-manager
+/bin/
+*.exe
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# GoReleaser
+/dist/

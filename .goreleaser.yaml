@@ -1,0 +1,25 @@
+version: 2
+project_name: aws-profile-manager
+
+builds:
+  - id: aws-profile-manager
+    main: ./cmd/aws-profile-manager
+    binary: aws-profile-manager
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/tiansuyu/aws_profile_manager/internal/cli.Version={{ .Version }}
+
+archives:
+  - formats:
+      - tar.gz
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
