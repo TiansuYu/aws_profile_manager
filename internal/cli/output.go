@@ -56,10 +56,14 @@ func writeEnvironment(w io.Writer, profile awsconfig.Profile, output string) err
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(environment)
 	case "shell":
-		_, _ = fmt.Fprintf(w, "unset %s\n", strings.Join(awsCredentialOverrideKeys, " "))
+		if _, err := fmt.Fprintf(w, "unset %s\n", strings.Join(awsCredentialOverrideKeys, " ")); err != nil {
+			return err
+		}
 		for _, key := range awsEnvironmentKeys {
 			if value := environment[key]; value != "" {
-				_, _ = fmt.Fprintf(w, "export %s=%s\n", key, shellQuote(value))
+				if _, err := fmt.Fprintf(w, "export %s=%s\n", key, shellQuote(value)); err != nil {
+					return err
+				}
 			}
 		}
 		return nil

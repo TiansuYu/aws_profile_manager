@@ -17,8 +17,9 @@ Select an AWS profile  ·  type to filter by name or account
 
 ## Install
 
-Requires the [AWS CLI v2](https://aws.amazon.com/cli/). Building from source
-requires Go ≥ 1.24.2.
+Building from source requires Go ≥ 1.24.2. Credential checks, SSO login, and
+AWS commands require the [AWS CLI v2](https://aws.amazon.com/cli/). Listing
+profiles and `env --login never` work without it.
 
 Install globally as `aws-profile-manager` via the Go toolchain:
 
@@ -67,13 +68,19 @@ aws-profile-manager exec --profile dev/data-platform -- aws sts get-caller-ident
 
 Running the tool without a command opens the interactive picker. It checks the
 selected profile's credentials, starts SSO login when needed, and prints an
-`exec` example.
+`exec` example. Press `/` to enter filter mode, then type or paste a profile
+name or account ID. Press Enter to accept the filter, then Enter again to
+select the highlighted profile. Outside filter mode, `q`, Esc, or Ctrl-C
+cancels the picker.
 
 To apply a profile to the current human shell:
 
 ```bash
-eval "$(aws-profile-manager env --profile dev/data-platform)"
+profile_env=$(aws-profile-manager env --profile dev/data-platform) && eval "$profile_env"
 ```
+
+The assignment checks the CLI's exit status before evaluating its output.
+`env` reports output-write failures with a nonzero exit status.
 
 `env` defaults to `--login never`, so it never unexpectedly opens a browser.
 Use `--login auto` to verify credentials first or `--login force` to force a new
@@ -152,6 +159,42 @@ VERSION=0.2.0-rc.1 make build
 `go install …@vX.Y.Z` reports the module version recorded by Go. Local builds
 use Go's recorded version when available (which may include Git metadata),
 and otherwise report `dev`. Release builds embed their version at build time.
+
+### Testing
+
+Run the checks used by CI:
+
+```bash
+go vet ./...
+go test -race ./...
+golangci-lint run
+```
+
+CI tests the minimum Go version and current stable Go, and runs golangci-lint
+v2.14 on stable Go. Release builds use stable Go and run only after the CI
+checks pass.
+
+The automated tests need no AWS credentials. They compile the CLI and use a
+temporary AWS config and fake `aws` executable to exercise login policies,
+login failures, child exit codes, credential isolation, JSON output, shell
+quoting, and output-write errors. Picker tests cover navigation, filtering,
+selection, late filter results, cancellation, and table layout. The subprocess integration tests
+support macOS and Linux, matching the release targets.
+
+For a live smoke test, choose a non-production profile and run:
+
+```bash
+make build
+bin/aws-profile-manager list --output json
+bin/aws-profile-manager exec --profile YOUR_SANDBOX_PROFILE --login never -- \
+  aws sts get-caller-identity --output json
+```
+
+This checks identity without initiating login. If the session is expired,
+repeat with `--login auto` and complete the SSO browser flow. Live AWS and
+browser-login checks are manual; they are not part of the automated suite.
+Run `bin/aws-profile-manager` to exercise the picker in a real terminal.
+Selecting a profile may check credentials and start SSO login.
 
 ## Contributing
 

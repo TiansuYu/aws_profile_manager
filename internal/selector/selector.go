@@ -130,9 +130,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Reserve 2 rows for the app banner + blank line rendered in View().
 		m.list.SetSize(msg.Width, msg.Height-2)
 		return m, nil
+	case list.FilterMatchesMsg:
+		// Old asynchronous results can arrive after a filter was accepted.
+		// Keep the settled selection stable until the user starts filtering again.
+		if m.list.FilterState() != list.Filtering {
+			return m, nil
+		}
 	case tea.KeyMsg:
 		// Let the list consume keys while filtering (so typed text reaches it).
 		if m.list.FilterState() == list.Filtering {
+			if msg.String() == "enter" && m.list.FilterInput.Value() != "" {
+				// Bubble Tea calculates filter matches in a command. If Enter
+				// arrives before that command finishes, the list can accept stale
+				// matches and the next Enter can select the wrong profile.
+				m.list.SetFilterText(m.list.FilterInput.Value())
+				m.list.FilterInput.Blur()
+				return m, nil
+			}
 			break
 		}
 		switch msg.String() {
