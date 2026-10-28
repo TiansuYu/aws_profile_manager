@@ -29,7 +29,7 @@ jobs:
         run: make test-race
       - name: Prek checks and secret scan
         if: matrix.go == 'stable'
-        uses: j178/prek-action@v3.0.1
+        uses: j178/prek-action@v3.1.0
         with:
           extra-args: --all-files --hook-stage manual
       - name: Lint
